@@ -18,7 +18,8 @@ float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,\
 object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,\
 undefined,unreachable,vla-bound,vptr"
 
-SOURCES="main.cpp lexer/lexer.cpp read_file/read_file.cpp"
+SOURCES="main.cpp lexer/lexer.cpp read_file/read_file.cpp parser/parser.cpp\
+         tree/tree.cpp tree/tree_dump.cpp error_handling/verify.cpp"
 
 OUTPUT="program"
 

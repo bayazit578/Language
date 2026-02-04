@@ -3,6 +3,11 @@
 #include "include.h"
 #include "lexer_types.h"
 
+static void init_dfa();
+static void init_keyword_dfa();
+static void init_ident_dfa();
+static void init_num_dfa();
+
 State table[S_ERROR][128];
 
 Token* lexer(char** ptr, uint32_t* count) {
@@ -24,132 +29,160 @@ Token* lexer(char** ptr, uint32_t* count) {
             continue;
         }
 
+        if (state == S_COMMENT) {
+            if (c == '\n') {
+                state = S_START;
+                token_start = current + 1;
+            }
+            current++;
+            continue;
+        }
+
+        if (state == S_COMMENT_ML) {
+            if (c == '*' && *(current + 1) == '/') {
+                state = S_START;
+                current += 2;
+                token_start = current;
+                continue;
+            }
+            current++;
+            continue;
+        }
+
         if (next_state == S_START && state != S_START) {
             int len = current - token_start;
 
             switch (state) {
                 case S_PLUS:
-                    tokens[*count].type = PLUS;
+                    CURRENT_TYPE = PLUS;
                     break;
 
                 case S_MINUS:
-                    tokens[*count].type = MINUS;
+                    CURRENT_TYPE = MINUS;
                     break;
 
                 case S_STAR:
-                    tokens[*count].type = MULTIPLY;
+                    CURRENT_TYPE = MULTIPLY;
                     break;
 
                 case S_SLASH:
-                    tokens[*count].type = DIVIDE;
+                    CURRENT_TYPE = DIVIDE;
                     break;
 
                 case S_EQ:
-                    tokens[*count].type = ASSIGN;
+                    CURRENT_TYPE = ASSIGN;
                     break;
 
                 case S_EQ2:
-                    tokens[*count].type = EQUAL;
+                    CURRENT_TYPE = EQUAL;
                     break;
 
                 case S_NE:
-                    tokens[*count].type = NOT_EQUAL;
+                    CURRENT_TYPE = NOT_EQUAL;
                     break;
 
                 case S_AND:
-                    tokens[*count].type = AND;
+                    CURRENT_TYPE = AND;
                     break;
 
                 case S_OR:
-                    tokens[*count].type = OR;
+                    CURRENT_TYPE = OR;
                     break;
 
                 case S_SEMIC:
-                    tokens[*count].type = SEMICOLON;
+                    CURRENT_TYPE = SEMICOLON;
                     break;
 
                 case S_COMMA:
-                    tokens[*count].type = COMMA;
+                    CURRENT_TYPE = COMMA;
                     break;
 
                 case S_LPAREN:
-                    tokens[*count].type = LPAREN;
+                    CURRENT_TYPE = LPAREN;
                     break;
 
                 case S_RPAREN:
-                    tokens[*count].type = RPAREN;
+                    CURRENT_TYPE = RPAREN;
                     break;
 
                 case S_LBRACE:
-                    tokens[*count].type = LBRACE;
+                    CURRENT_TYPE = LBRACE;
                     break;
 
                 case S_RBRACE:
-                    tokens[*count].type = RBRACE;
+                    CURRENT_TYPE = RBRACE;
                     break;
 
                 case S_ID:
-                    tokens[*count].type = IDENT;
+                    CURRENT_TYPE = IDENT;
                     break;
 
                 case S_NUM:
-                    tokens[*count].type = INT;
+                    CURRENT_TYPE = INT;
                     break;
 
                 case S_FLOAT:
-                    tokens[*count].type = FLOAT;
+                    CURRENT_TYPE = FLOAT;
                     break;
 
                 case S_IF:
-                    tokens[*count].type = WHILE;
+                    CURRENT_TYPE = IF;
                     break;
 
                 case S_ELSE_IF:
-                    tokens[*count].type = FOR;
+                    CURRENT_TYPE = ELSE_IF;
                     break;
 
                 case S_ELSE:
-                    tokens[*count].type = DO;
+                    CURRENT_TYPE = ELSE;
                     break;
 
                 case S_WHILE:
-                    tokens[*count].type = ELSE;
+                    CURRENT_TYPE = WHILE;
                     break;
 
                 case S_FOR:
-                    tokens[*count].type = ELSE_IF;
+                    CURRENT_TYPE = FOR;
                     break;
 
                 case S_DO:
-                    tokens[*count].type = IF;
+                    CURRENT_TYPE = DO;
                     break;
 
                 case S_GT:
-                    tokens[*count].type = GREATER;
+                    CURRENT_TYPE = GREATER;
                     break;
 
                 case S_LT:
-                    tokens[*count].type = LESS;
+                    CURRENT_TYPE = LESS;
+                    break;
+
+                case S_GT_EQ:
+                    CURRENT_TYPE = GREATER_EQ;
+                    break;
+
+                case S_LT_EQ:
+                    CURRENT_TYPE = LESS_EQ;
                     break;
 
                 default:
                     continue;
             }
 
-            if (tokens[*count].type == INT) {
-                tokens[*count].value.intg = atoi(token_start);
-                printf(RED "%d\n" RESET, tokens[*count].value.intg);
+            if (CURRENT_TYPE == INT) {
+                CURRENT_VAL.intg = atoi(token_start);
+                // printf(RED "%d\n" RESET, CURRENT_VAL.intg);
             }
 
-            else if (tokens[*count].type == FLOAT) {
-                tokens[*count].value.dubl = atof(token_start);
-                printf(RED "%0.1f\n" RESET, tokens[*count].value.dubl);
+            else if (CURRENT_TYPE == FLOAT) {
+                CURRENT_VAL.dubl = atof(token_start);
+                // printf(RED "%0.1f\n" RESET, CURRENT_VAL.dubl);
             }
 
             else {
-                tokens[*count].value.str = (char*)calloc(len + 1, sizeof(char));
-                strncpy(tokens[*count].value.str, token_start, len);
-                tokens[*count].value.str[len] = '\0';
+                CURRENT_VAL.str = (char*)calloc(len + 1, sizeof(char));
+                strncpy(CURRENT_VAL.str, token_start, len);
+                CURRENT_VAL.str[len] = '\0';
             }
 
             (*count)++;
@@ -169,9 +202,9 @@ Token* lexer(char** ptr, uint32_t* count) {
         }
     }
 
-    tokens[*count].type = END_OF_FILE;
-    tokens[*count].value.str = (char*)calloc(1, sizeof(char));
-    tokens[*count].value.str[0] = '\0';
+    CURRENT_TYPE = END_OF_FILE;
+    CURRENT_VAL.str = (char*)calloc(1, sizeof(char));
+    CURRENT_VAL.str[0] = '\0';
     (*count)++;
 
     *ptr = current;
@@ -179,7 +212,7 @@ Token* lexer(char** ptr, uint32_t* count) {
     return tokens;
 }
 
-void init_dfa() {
+static void init_dfa() {
     for (int i = 0; i < S_ERROR; i++) {
         for (int j = 0; j < 128; j++) {
             table[i][j] = S_ERROR;
@@ -211,7 +244,7 @@ void init_dfa() {
 
     for (int i = S_PLUS; i < S_W; i++) {
         for (int c = 0; c < 128; c++) {
-            table[i][c] = S_START; // распознавание // /* == !=
+            table[i][c] = S_START; // распознавание // /* == != >= <=
         }
     }
 
@@ -222,13 +255,15 @@ void init_dfa() {
     table[S_STAR]['/'] = S_COMMENT_ML;
     table[S_AMP]['&'] = S_AND;
     table[S_PIPE]['|'] = S_OR;
+    table[S_GT]['='] = S_GT_EQ;
+    table[S_LT]['='] = S_LT_EQ;
 
     init_ident_dfa();
     init_keyword_dfa();
     init_num_dfa();
 }
 
-void init_keyword_dfa() {
+static void init_keyword_dfa() {
     table[S_START]['w'] = S_W;
     table[S_START]['f'] = S_F;
     table[S_START]['d'] = S_D;
@@ -284,7 +319,7 @@ void init_keyword_dfa() {
     }
 }
 
-void init_ident_dfa() {
+static void init_ident_dfa() {
     for (int c = 0; c < 128; c++) {
         if (isalpha(c)) {
             table[S_START][c] = S_ID;
@@ -305,7 +340,7 @@ void init_ident_dfa() {
     }
 }
 
-void init_num_dfa() {
+static void init_num_dfa() {
     table[S_NUM]['.'] = S_DOT_FLOAT;
     table[S_START]['.'] = S_DOT_FLOAT;
 

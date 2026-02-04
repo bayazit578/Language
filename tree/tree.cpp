@@ -3,14 +3,15 @@
 #include "include.h"
 
 #include "lexer/lexer_types.h"
+#include "tree/tree_types.h"
 
 void tree_create(Tree* tree, Node* root) {
     tree->root = root;
     tree->size = 1;
 }
 
-Node* new_node_differ(Node* parent, Tagged_val tagged_value,
-                      Node* left, Node* right, List_oper* oper_table) {
+Node* new_node(Node* parent, Tag_val tagged_value,
+                      Node* left, Node* right) {
     Node* new_node = (Node*)calloc(1, sizeof(Node));
 
     assert(new_node && "Error of new_node allocation.");
@@ -43,15 +44,15 @@ Node* new_node_differ(Node* parent, Tagged_val tagged_value,
         case FOR:
         case DO:
         case END_OF_FILE:
-            new_node->value.str = strdup(tagged_value.value.str);
+            new_node->value = tagged_value.value;
             break;
 
         case INT:
-            new_node->value.intg = tagged_value.value.num;
+            new_node->value = tagged_value.value;
             break;
 
         case FLOAT:
-            new_node->value.dubl = tagged_value.value.num;
+            new_node->value = tagged_value.value;
             break;
 
         default:
@@ -64,7 +65,6 @@ Node* new_node_differ(Node* parent, Tagged_val tagged_value,
     new_node->left = left;
     new_node->right = right;
     new_node->type = tagged_value.type;
-
     new_node->rank = 0;
 
     return new_node;
@@ -78,9 +78,9 @@ void burn_the_tree(Node* node) {
         if(node->right)
             burn_the_tree(node->right);
 
-        if(node->type == var || node->type == oper) {
-            free(node->value.str);
-        }
+        // if(node->type != INT && node->type != FLOAT) {
+        //     free(node->value.str);
+        // }
 
         free(node);
     }

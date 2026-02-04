@@ -4,10 +4,11 @@
 #include "lexer/lexer_types.h"
 #include "tree/tree_types.h"
 
-Tree* get_g(Token* tokens, uint32_t* ptr);
-Node* get_st(Token* tokens, uint32_t* ptr);
-Node* get_w(Token* tokens, uint32_t* ptr);
-Node* get_a(Token* tokens, uint32_t* ptr);
-Node* get_s(Token* tokens, uint32_t* ptr);
-Node* get_m(Token* tokens, uint32_t* ptr);
-Node* get_p(Token* tokens, uint32_t* ptr);
+Tree* parse_program(Token* tokens, uint32_t* ptr, bool* synt_error);
+void destruct_tokens(Token* tokens);
+
+#define INCR_PTR(step)  (*ptr) += step
+#define CURRENT_TYPE    tokens[*ptr].type
+#define CURRENT_VAL     tokens[*ptr].value
+#define SYNTAX_ERROR    *synt_error = true;\
+                        return NULL;

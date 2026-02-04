@@ -11,6 +11,7 @@ struct Node{
     Node*     parent;
     Node*     left;
     Node*     right;
+    uint32_t  rank;
         };
 
 typedef struct {
