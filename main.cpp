@@ -40,37 +40,28 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    printf(YELLO "===========================================\n" RESET);
-    for (int i = 0; i < count; i++) {
-        if (tokens[i].type == INT) {
-            printf(YELLO "[%d]:%d\n" RESET, tokens[i].type, tokens[i].value.intg);
-        }
-
-        else if (tokens[i].type == FLOAT) {
-            printf(YELLO "[%d]:%0.2f\n" RESET, tokens[i].type, tokens[i].value.dubl);
-        }
-
-        else {
-            printf(YELLO "[%d]:%s\n" RESET, tokens[i].type, tokens[i].value.str);
-        }
-    }
-    printf(YELLO "===========================================\n" RESET);
+    dump_tokens(tokens, count);
 
     bool synt_error = false;
     uint32_t ptr = 0;
     Tree* program_tree = parse_program(tokens, &ptr, &synt_error);
     if (synt_error) {
+        goto syntax_error;
+    }
+
+    succesfull_execution:
+        free(tokens);
+        free(buff);
+        burn_the_tree(program_tree->root);
+        free(program_tree);
+        return 0;
+
+    syntax_error:
         print_error(ptr);
         free(tokens);
         free(buff);
         free(program_tree);
         return 1;
-    }
-
-    free(tokens);
-    free(buff);
-    burn_the_tree(program_tree->root);
-    free(program_tree);
 
     return 0;
 }

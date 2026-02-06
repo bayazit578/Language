@@ -6,6 +6,20 @@
 
 static void node_dump(Node* node, FILE* dot_file);
 
+void val_print(Node* node) {
+    if (node->type == INT) {
+        printf(RED "%d\n" RESET, node->type, node->value.intg);
+    }
+
+    else if (node->type == FLOAT) {
+        printf(RED "%0.2f\n" RESET, node->type, node->value.dubl);
+    }
+
+    else {
+        printf(RED "%s\n" RESET, node->type, node->value.str);
+    }
+}
+
 void tree_dump(Tree* tree, const char* filename) {
     if (tree->root == NULL) {
         fprintf(stderr, RED "Tree is NULL" RESET "\n");
@@ -43,13 +57,12 @@ static void node_dump(Node* node, FILE* dot_file) {
                       " CELLBORDER=\"1\" CELLSPACING=\"0\">\n", node);
 
     switch (node->type) {
-
         case INT:
             fprintf(dot_file, "           "
-                            "<TR><TD COLSPAN=\"2\">NUM</TD></TR>\n"
-                            "           "
-                            "<TR><TD COLSPAN=\"2\">%d</TD></TR>\n",
-                            node->value.intg);
+                              "<TR><TD COLSPAN=\"2\">NUM</TD></TR>\n"
+                              "           "
+                              "<TR><TD COLSPAN=\"2\">%d</TD></TR>\n",
+                              node->value.intg);
             break;
 
         case FLOAT:

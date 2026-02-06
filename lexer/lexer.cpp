@@ -10,6 +10,24 @@ static void init_num_dfa();
 
 State table[S_ERROR][128];
 
+void dump_tokens(Token* tokens, uint32_t count) {
+    printf(YELLO "=====================================================================\n" RESET);
+    for (int i = 0; i < count; i++) {
+        if (tokens[i].type == INT) {
+            printf(YELLO "[%d]:%d\n" RESET, tokens[i].type, tokens[i].value.intg);
+        }
+
+        else if (tokens[i].type == FLOAT) {
+            printf(YELLO "[%d]:%0.2f\n" RESET, tokens[i].type, tokens[i].value.dubl);
+        }
+
+        else {
+            printf(YELLO "[%d]:%s\n" RESET, tokens[i].type, tokens[i].value.str);
+        }
+    }
+    printf(YELLO "=====================================================================\n" RESET);
+}
+
 Token* lexer(char** ptr, uint32_t* count) {
     init_dfa();
 

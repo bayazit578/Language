@@ -31,9 +31,9 @@ g++ $CFLAGS $SOURCES -o $OUTPUT
 if [ $? -eq 0 ]; then
     echo "Compilation executed successfully!"
     echo "Running program: ./$OUTPUT"
-    echo "=================================="
+    echo "====================================================================="
     ./$OUTPUT $INPUT
-    echo "=================================="
+    echo "====================================================================="
     echo "Program executed."
     read -p "Press Enter to exit..."
 else
