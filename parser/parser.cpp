@@ -25,14 +25,15 @@
                                         SYNTAX_ERROR;   \
                                     }
 
-#define DUMP_STATUS(node)           printf("%s\n", __func__); \
-                                    dump_tree_status(node);
+#define DUMP_STATUS(node)           printf(GREEN "===================\n" RESET); \
+                                    printf(GREEN "In %s:\n" RESET, __func__);     \
+                                    dump_tree_status(node, 0);
 
 #define NEXT_TYPE                   tokens[*ptr].type
 #define NEXT_VAL                    tokens[*ptr].value
 
 
-static void dump_tree_status();
+static void dump_tree_status(Node* root, uint32_t space);
 
 static Node* get_st(Token* tokens, uint32_t* ptr, bool* synt_error);
 
@@ -45,12 +46,12 @@ static Node* get_if(Token* tokens, uint32_t* ptr, bool* synt_error);
 static Node* get_else_if(Token* tokens, uint32_t* ptr, bool* synt_error);
 static Node* get_else(Token* tokens, uint32_t* ptr, bool* synt_error);
 static Node* get_for(Token* tokens, uint32_t* ptr, bool* synt_error);
+static Node* get_for_cond(Token* tokens, uint32_t* ptr, bool* synt_error);
 static Node* get_do(Token* tokens, uint32_t* ptr, bool* synt_error);
 
 static Node* get_a(Token* tokens, uint32_t* ptr, bool* synt_error);
 
 static Node* get_e(Token* tokens, uint32_t* ptr, bool* synt_error);
-static Node* get_or(Token* tokens, uint32_t* ptr, bool* synt_error);
 static Node* get_and(Token* tokens, uint32_t* ptr, bool* synt_error);
 static Node* get_comp(Token* tokens, uint32_t* ptr, bool* synt_error);
 static Node* get_arith(Token* tokens, uint32_t* ptr, bool* synt_error);
@@ -71,7 +72,7 @@ static void dump_tree_status(Node* root, uint32_t space) {
         printf(" ");
     }
 
-    printf(GREEN "%d\n" RESET, root->value);
+    val_print(root);
 
     dump_tree_status(root->left, space);
 }
@@ -84,8 +85,6 @@ Tree* parse_program(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     SYNTAX_ERROR_TYPE(END_OF_FILE);
 
-    INCR_PTR(1);
-
     Tree* lang_tree = (Tree*)calloc(1, sizeof(Tree));
     tree_create(lang_tree, root);
     return lang_tree;
@@ -95,7 +94,7 @@ static Node* get_compound_st(Token* tokens, uint32_t* ptr, bool* synt_error) {
     Node* root = NULL;
     Node* current = NULL;
 
-    while (NEXT_TYPE != END_OF_FILE) {
+    while (CURRENT_TYPE != END_OF_FILE && CURRENT_TYPE != SEMICOLON) {
         Node* st_body = get_st(tokens, ptr, synt_error);
         SYNTAX_ERROR_ABSENT(st_body);
 
@@ -111,10 +110,9 @@ static Node* get_compound_st(Token* tokens, uint32_t* ptr, bool* synt_error) {
             current->right = st_node;
             current = st_node;
         }
-
-        INCR_PTR(1);
     }
 
+    DUMP_STATUS(root);
     return root;
 }
 
@@ -123,14 +121,15 @@ static Node* get_st(Token* tokens, uint32_t* ptr, bool* synt_error) {
     SYNTAX_ERROR_CHECK;
 
     if (!st_node) {
-        st_node = get_structured_st(tokens, ptr, synt_error);
+        st_node = get_simple_st(tokens, ptr, synt_error);
         SYNTAX_ERROR_ABSENT(st_node);
 
-        INCR_PTR(1);
-
         SYNTAX_ERROR_TYPE(RPAREN);
+
+        INCR_PTR(1);
     }
 
+    DUMP_STATUS(st_node);
     return st_node;
 }
 
@@ -139,6 +138,7 @@ static Node* get_simple_st(Token* tokens, uint32_t* ptr, bool* synt_error) {
     simple_st_node = get_a(tokens, ptr, synt_error);
     SYNTAX_ERROR_CHECK;
 
+    DUMP_STATUS(simple_st_node);
     return simple_st_node;
 }
 
@@ -146,30 +146,31 @@ static Node* get_structured_st(Token* tokens, uint32_t* ptr, bool* synt_error) {
     Node* struct_st_node = NULL;
 
     switch (CURRENT_TYPE) {
-        case WHILE:
+        case IF:
             struct_st_node = get_w(tokens, ptr, synt_error);
             SYNTAX_ERROR_CHECK;
             break;
 
-        case IF:
+        case WHILE:
             struct_st_node = get_if(tokens, ptr, synt_error);
             SYNTAX_ERROR_CHECK;
             break;
 
-        case FOR:
+        case ELSE_IF:
             struct_st_node = get_for(tokens, ptr, synt_error);
             SYNTAX_ERROR_CHECK;
             break;
 
-        case DO:
+        case ELSE:
             struct_st_node = get_do(tokens, ptr, synt_error);
             SYNTAX_ERROR_CHECK;
             break;
 
         default:
-            SYNTAX_ERROR;
+            return NULL;
     }
 
+    DUMP_STATUS(struct_st_node);
     return struct_st_node;
 }
 
@@ -178,7 +179,7 @@ static Node* get_w(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     INCR_PTR(1);
 
-    SYNTAX_ERROR(LBRACE);
+    SYNTAX_ERROR_TYPE(LBRACE);
 
     INCR_PTR(1);
 
@@ -186,12 +187,12 @@ static Node* get_w(Token* tokens, uint32_t* ptr, bool* synt_error) {
     SYNTAX_ERROR_CHECK;
 
     cond = new_node(NULL, (Tag_val){LBRACE, {.str = "{"}}, NULL, cond);
+
+    SYNTAX_ERROR_TYPE(RBRACE);
+
     INCR_PTR(1);
 
-    SYNTAX_ERROR(RBRACE);
-
-    INCR_PTR(1);
-    SYNTAX_ERROR(SEMICOLON);
+    SYNTAX_ERROR_TYPE(SEMICOLON);
 
     INCR_PTR(1);
 
@@ -200,12 +201,14 @@ static Node* get_w(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     body = new_node(NULL, (Tag_val){SEMICOLON, {.str = ";"}}, NULL, body);
 
-    INCR_PTR(1);
+    SYNTAX_ERROR_TYPE(SEMICOLON);
 
-    SYNTAX_ERROR(SEMICOLON);
+    INCR_PTR(1);
 
     while_node->left = cond;
     while_node->right = body;
+
+    DUMP_STATUS(while_node);
     return while_node;
 }
 
@@ -213,24 +216,22 @@ static Node* get_if(Token* tokens, uint32_t* ptr, bool* synt_error) {
     Node* if_node = new_node(NULL, (Tag_val){WHILE, {.str = "while"}}, NULL, NULL);
 
     INCR_PTR(1);
-    if (CURRENT_TYPE != LBRACE) {
-        SYNTAX_ERROR;
-    }
+
+    SYNTAX_ERROR_TYPE(LBRACE);
 
     INCR_PTR(1);
+
     Node* cond = get_e(tokens, ptr, synt_error);
     SYNTAX_ERROR_CHECK;
 
     cond = new_node(NULL, (Tag_val){LBRACE, {.str = "{"}}, NULL, cond);
-    if (CURRENT_TYPE != RBRACE) {
-        SYNTAX_ERROR;
-    }
+    SYNTAX_ERROR_TYPE(RBRACE);
 
     INCR_PTR(1);
 
-    if (CURRENT_TYPE != RBRACE) {
-        SYNTAX_ERROR;
-    }
+    SYNTAX_ERROR_TYPE(SEMICOLON);
+
+    INCR_PTR(1);
 
     Node* body = get_compound_st(tokens, ptr, synt_error);
     SYNTAX_ERROR_CHECK;
@@ -238,17 +239,18 @@ static Node* get_if(Token* tokens, uint32_t* ptr, bool* synt_error) {
     body = new_node(NULL, (Tag_val){SEMICOLON, {.str = ";"}}, NULL, body);
     cond->left = body;
 
-    if (CURRENT_TYPE != SEMICOLON) {
-        SYNTAX_ERROR;
-    }
+    SYNTAX_ERROR_TYPE(SEMICOLON);
 
     if_node->left = cond;
+
+    INCR_PTR(1);
 
     Node* else_if_node = get_else_if(tokens, ptr, synt_error);
     SYNTAX_ERROR_CHECK;
 
     if_node->right = else_if_node;
 
+    DUMP_STATUS(if_node);
     return if_node;
 }
 
@@ -262,9 +264,7 @@ static Node* get_else_if(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
         INCR_PTR(1);
 
-        if (CURRENT_TYPE != LBRACE) {
-            SYNTAX_ERROR;
-        }
+        SYNTAX_ERROR_TYPE(LBRACE);
 
         INCR_PTR(1);
 
@@ -273,15 +273,11 @@ static Node* get_else_if(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
         cond = new_node(NULL, (Tag_val){LBRACE, {.str = "{"}}, NULL, cond);
 
-        if (CURRENT_TYPE != RBRACE) {
-            SYNTAX_ERROR;
-        }
+        SYNTAX_ERROR_TYPE(RBRACE);
 
         INCR_PTR(1);
 
-        if (CURRENT_TYPE != SEMICOLON) {
-            SYNTAX_ERROR;
-        }
+        SYNTAX_ERROR_TYPE(SEMICOLON);
 
         INCR_PTR(1);
 
@@ -291,9 +287,7 @@ static Node* get_else_if(Token* tokens, uint32_t* ptr, bool* synt_error) {
         body = new_node(NULL, (Tag_val){SEMICOLON, {.str = ";"}}, NULL, body);
         cond->left = body;
 
-        if (CURRENT_TYPE != SEMICOLON) {
-            SYNTAX_ERROR;
-        }
+        SYNTAX_ERROR_TYPE(SEMICOLON);
 
         INCR_PTR(1);
 
@@ -315,6 +309,7 @@ static Node* get_else_if(Token* tokens, uint32_t* ptr, bool* synt_error) {
         SYNTAX_ERROR_CHECK;
     }
 
+    DUMP_STATUS(root);
     return root;
 }
 
@@ -323,7 +318,7 @@ static Node* get_else(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     INCR_PTR(1);
 
-    SYNTAX_ERROR(SEMICOLON);
+    SYNTAX_ERROR_TYPE(SEMICOLON);
 
     INCR_PTR(1);
 
@@ -332,9 +327,11 @@ static Node* get_else(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     body = new_node(NULL, (Tag_val){SEMICOLON, {.str = ";"}}, NULL, body);
 
-    SYNTAX_ERROR(SEMICOLON);
+    SYNTAX_ERROR_TYPE(SEMICOLON);
 
     else_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL}, NULL, body);
+
+    DUMP_STATUS(else_node);
     return else_node;
 }
 
@@ -348,7 +345,7 @@ static Node* get_for(Token* tokens, uint32_t* ptr, bool* synt_error) {
     INCR_PTR(1);
 
     Node* cond = get_for_cond(tokens, ptr, synt_error);
-    SYNTAX_ERROR_ABSENT(body);
+    SYNTAX_ERROR_ABSENT(cond);
 
     SYNTAX_ERROR_TYPE(RBRACE);
 
@@ -368,6 +365,7 @@ static Node* get_for(Token* tokens, uint32_t* ptr, bool* synt_error) {
     for_node->left = cond;
     for_node->right = body;
 
+    DUMP_STATUS(for_node);
     return for_node;
 }
 
@@ -404,10 +402,11 @@ static Node* get_for_cond(Token* tokens, uint32_t* ptr, bool* synt_error) {
     }
     incr = new_node(NULL, (Tag_val){RPAREN, {.str = ")"}},
                     NULL, incr);
-    cond_node->left = incr;
+    cond->left = incr;
 
     Node* cond_node = new_node(NULL, (Tag_val){LBRACE, {.str = "{"}}, NULL, init);
 
+    DUMP_STATUS(cond_node);
     return cond_node;
 }
 
@@ -416,44 +415,46 @@ static Node* get_do(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     INCR_PTR(1);
 
-    SYNTAX_ERROR(SEMICOLON);
+    SYNTAX_ERROR_TYPE(SEMICOLON);
 
     Node* body = get_compound_st(tokens, ptr, synt_error);
     SYNTAX_ERROR_ABSENT(body);
 
-    SYNTAX_ERROR(SEMICOLON);
+    SYNTAX_ERROR_TYPE(SEMICOLON);
 
     INCR_PTR(1);
 
-    SYNTAX_ERROR(IF);
+    SYNTAX_ERROR_TYPE(IF);
 
     INCR_PTR(1);
 
-    SYNTAX_ERROR(LBRACE);
+    SYNTAX_ERROR_TYPE(LBRACE);
 
     INCR_PTR(1);
 
     Node* cond = get_e(tokens, ptr, synt_error);
     SYNTAX_ERROR_ABSENT(cond);
 
-    SYNTAX_ERROR(RBRACE);
+    SYNTAX_ERROR_TYPE(RBRACE);
 
     INCR_PTR(1);
 
-    SYNTAX_ERROR(RPAREN);
+    SYNTAX_ERROR_TYPE(RPAREN);
 
     do_node->left = body;
     do_node->right = cond;
+
+    DUMP_STATUS(do_node);
     return do_node;
 }
 
 static Node* get_a(Token* tokens, uint32_t* ptr, bool* synt_error) {
-    SYNTAX_ERROR(IDENT);
+    SYNTAX_ERROR_TYPE(IDENT);
     Node* id_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL}, NULL, NULL);
 
     INCR_PTR(1);
 
-    SYNTAX_ERROR(ASSIGN);
+    SYNTAX_ERROR_TYPE(ASSIGN);
 
     Node* assign_node = new_node(NULL, (Tag_val){ASSIGN, {.str = "="}}, NULL, NULL);
 
@@ -464,6 +465,8 @@ static Node* get_a(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     assign_node->left = id_node;
     assign_node->right = val;
+
+    DUMP_STATUS(assign_node);
     return assign_node;
 }
 
@@ -472,7 +475,7 @@ static Node* get_e(Token* tokens, uint32_t* ptr, bool* synt_error) {
     SYNTAX_ERROR_ABSENT(e1_node);
 
     while (NEXT_TYPE == OR) {
-        Node* e1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL}, NULL, e1_node);
+        e1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL}, NULL, e1_node);
 
         INCR_PTR(1);
 
@@ -484,6 +487,7 @@ static Node* get_e(Token* tokens, uint32_t* ptr, bool* synt_error) {
         INCR_PTR(1);
     }
 
+    DUMP_STATUS(e1_node);
     return e1_node;
 }
 
@@ -492,16 +496,17 @@ static Node* get_and(Token* tokens, uint32_t* ptr, bool* synt_error) {
     SYNTAX_ERROR_ABSENT(and1_node);
 
     while (CURRENT_TYPE == AND) {
-        Node* and1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
-                                   NULL, and1_node);
+        and1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
+                                   and1_node, NULL);
         INCR_PTR(1);
 
         Node* and2_node = get_comp(tokens, ptr, synt_error);
         SYNTAX_ERROR_ABSENT(and2_node);
 
-        and1_node->left = and2_node;
+        and1_node->right = and2_node;
     }
 
+    DUMP_STATUS(and1_node);
     return and1_node;
 }
 
@@ -512,16 +517,17 @@ static Node* get_comp(Token* tokens, uint32_t* ptr, bool* synt_error) {
     while (CURRENT_TYPE == GREATER    || CURRENT_TYPE == LESS    ||
            CURRENT_TYPE == GREATER_EQ || CURRENT_TYPE == LESS_EQ ||
            CURRENT_TYPE == EQUAL      || CURRENT_TYPE == NOT_EQUAL) {
-        Node* comp1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
-                                    NULL, comp1_node);
+        comp1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
+                                    comp1_node, NULL);
         INCR_PTR(1);
 
         Node* comp2_node = get_arith(tokens, ptr, synt_error);
         SYNTAX_ERROR_ABSENT(comp2_node);
 
-        comp1_node->left = comp2_node;
+        comp1_node->right = comp2_node;
     }
 
+    DUMP_STATUS(comp1_node);
     return comp1_node;
 }
 
@@ -530,16 +536,17 @@ static Node* get_arith(Token* tokens, uint32_t* ptr, bool* synt_error) {
     SYNTAX_ERROR_ABSENT(arith1_node);
 
     while (CURRENT_TYPE == PLUS || CURRENT_TYPE == MINUS) {
-        Node* arith1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
-                                    NULL, arith1_node);
+        arith1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
+                                    arith1_node, NULL);
         INCR_PTR(1);
 
         Node* arith2_node = get_t(tokens, ptr, synt_error);
         SYNTAX_ERROR_ABSENT(arith2_node);
 
-        arith1_node->left = arith2_node;
+        arith1_node->right = arith2_node;
     }
 
+    DUMP_STATUS(arith1_node);
     return arith1_node;
 }
 
@@ -548,16 +555,17 @@ static Node* get_t(Token* tokens, uint32_t* ptr, bool* synt_error) {
     SYNTAX_ERROR_ABSENT(t1_node);
 
     while (CURRENT_TYPE == MULTIPLY || CURRENT_TYPE == DIVIDE) {
-        Node* t1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
-                                 NULL, t1_node);
+        t1_node = new_node(NULL, (Tag_val){CURRENT_TYPE, CURRENT_VAL},
+                                 t1_node, NULL);
         INCR_PTR(1);
 
         Node* t2_node = get_f(tokens, ptr, synt_error);
         SYNTAX_ERROR_ABSENT(t2_node);
 
-        t1_node->left = t2_node;
+        t1_node->right = t2_node;
     }
 
+    DUMP_STATUS(t1_node);
     return t1_node;
 }
 
@@ -590,5 +598,6 @@ static Node* get_f(Token* tokens, uint32_t* ptr, bool* synt_error) {
 
     INCR_PTR(1);
 
+    DUMP_STATUS(f_node);
     return f_node;
 }

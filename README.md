@@ -12,13 +12,15 @@ StructuredST := W | IF | FOR | DO
 
 W := if '{' E '}' ';' CompoundST ';'
 
-IF := while '{' E '}' ';' CompoundST ';' ELSE_IF 
+IF := while '{' E '}' ';' CompoundST ';' ELSE_IF
 
 ELSE_IF := { for '{' E '}' ';' CompoundST ';' }* ELSE?
 
 ELSE := do ';' CompoundST ';'
 
-FOR := else if '{' A? ')' E? ')' A? '}' ';' CompoundST ';'
+FOR := else if '{' FOR_COND '}' ';' CompoundST ';'
+
+FOR_COND := A? ')' E? ')' A?
 
 DO := else ';' CompoundST ';' if '{' E '}' ')'
 

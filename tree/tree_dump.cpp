@@ -7,16 +7,24 @@
 static void node_dump(Node* node, FILE* dot_file);
 
 void val_print(Node* node) {
+    if (!node) {
+        return;
+    }
+
     if (node->type == INT) {
-        printf(RED "%d\n" RESET, node->type, node->value.intg);
+        printf(GREEN "%d\n" RESET, node->value.intg);
     }
 
     else if (node->type == FLOAT) {
-        printf(RED "%0.2f\n" RESET, node->type, node->value.dubl);
+        printf(GREEN "%0.2f\n" RESET, node->value.dubl);
+    }
+
+    else if (node->value.str) {
+        printf(GREEN "%s\n" RESET, node->value.str);
     }
 
     else {
-        printf(RED "%s\n" RESET, node->type, node->value.str);
+        return;
     }
 }
 
@@ -53,7 +61,7 @@ static void node_dump(Node* node, FILE* dot_file) {
     if(!node)
         return;
 
-    fprintf(dot_file, "    node%u [label=<<TABLE BORDER=\"0\""
+    fprintf(dot_file, "    node%lu [label=<<TABLE BORDER=\"0\""
                       " CELLBORDER=\"1\" CELLSPACING=\"0\">\n", node);
 
     switch (node->type) {
@@ -125,17 +133,17 @@ static void node_dump(Node* node, FILE* dot_file) {
 
     fprintf(dot_file, "    {\n"
                       "        rank=%u;\n"
-                      "        node%u;\n"
+                      "        node%lu;\n"
 					  "    }\n", node->rank, node);
 
     if(node->left) {
         node_dump(node->left, dot_file);
-        fprintf(dot_file, "    node%u->node%u\n", node, node->left);
+        fprintf(dot_file, "    node%lu->node%lu\n", node, node->left);
     }
 
     if(node->right) {
         node_dump(node->right, dot_file);
-        fprintf(dot_file, "    node%u->node%u\n", node, node->right);
+        fprintf(dot_file, "    node%lu->node%lu\n", node, node->right);
     }
 }
 

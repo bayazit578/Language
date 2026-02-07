@@ -8,21 +8,34 @@ static void init_keyword_dfa();
 static void init_ident_dfa();
 static void init_num_dfa();
 
+#define CURRENT_TYPE tokens[*count].type
+#define CURRENT_VAL  tokens[*count].value
+
 State table[S_ERROR][128];
+
+void destroy_tokens(Token* tokens, uint64_t count) {
+    for (uint64_t i = 0; i < count; i++) {
+        if (tokens[i].type != INT && tokens[i].type != FLOAT) {
+            free(tokens[i].value.str);
+        }
+    }
+
+    free(tokens);
+}
 
 void dump_tokens(Token* tokens, uint32_t count) {
     printf(YELLO "=====================================================================\n" RESET);
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         if (tokens[i].type == INT) {
-            printf(YELLO "[%d]:%d\n" RESET, tokens[i].type, tokens[i].value.intg);
+            printf(YELLO "[%d]:%d\n" RESET, i, tokens[i].value.intg);
         }
 
         else if (tokens[i].type == FLOAT) {
-            printf(YELLO "[%d]:%0.2f\n" RESET, tokens[i].type, tokens[i].value.dubl);
+            printf(YELLO "[%d]:%0.2f\n" RESET, i, tokens[i].value.dubl);
         }
 
         else {
-            printf(YELLO "[%d]:%s\n" RESET, tokens[i].type, tokens[i].value.str);
+            printf(YELLO "[%d]:%s\n" RESET, i, tokens[i].value.str);
         }
     }
     printf(YELLO "=====================================================================\n" RESET);
@@ -68,7 +81,7 @@ Token* lexer(char** ptr, uint32_t* count) {
         }
 
         if (next_state == S_START && state != S_START) {
-            int len = current - token_start;
+            uint32_t len = current - token_start;
 
             switch (state) {
                 case S_PLUS:
@@ -231,13 +244,13 @@ Token* lexer(char** ptr, uint32_t* count) {
 }
 
 static void init_dfa() {
-    for (int i = 0; i < S_ERROR; i++) {
+    for (unsigned char i = 0; i < S_ERROR; i++) {
         for (int j = 0; j < 128; j++) {
             table[i][j] = S_ERROR;
         }
     }
 
-    for (int c = 0; c < 128; c++) {
+    for (unsigned char c = 0; c < 128; c++) {
         if (isspace(c)) {
             table[S_START][c] = S_START;
         }
@@ -260,9 +273,9 @@ static void init_dfa() {
     table[S_START]['{'] = S_LBRACE;
     table[S_START]['}'] = S_RBRACE;
 
-    for (int i = S_PLUS; i < S_W; i++) {
-        for (int c = 0; c < 128; c++) {
-            table[i][c] = S_START; // распознавание // /* == != >= <=
+    for (unsigned char i = S_PLUS; i < S_W; i++) {
+        for (unsigned char c = 0; c < 128; c++) {
+            table[i][c] = S_START;
         }
     }
 
@@ -292,7 +305,7 @@ static void init_keyword_dfa() {
     table[S_ELSE_SPACE]['i'] = S_ELSE_I;
     table[S_ELSE_I]['f'] = S_ELSE_IF;
 
-    for (int c = 0; c < 128; c++) {
+    for (unsigned char c = 0; c < 128; c++) {
         if (isalpha(c) || isdigit(c) || c == '_') {
             table[S_W][c] = (c == 'h') ? S_WH : S_ID;
             table[S_WH][c] = (c == 'i') ? S_WHI : S_ID;
@@ -320,6 +333,7 @@ static void init_keyword_dfa() {
             table[S_WHILE][c] = S_START;
             table[S_FOR][c] = S_START;
             table[S_DO][c] = S_START;
+            table[S_IF][c] = S_START;
             table[S_ELSE_IF][c] = S_START;
 
             if (c != ' ') {
@@ -338,7 +352,7 @@ static void init_keyword_dfa() {
 }
 
 static void init_ident_dfa() {
-    for (int c = 0; c < 128; c++) {
+    for (unsigned char c = 0; c < 128; c++) {
         if (isalpha(c)) {
             table[S_START][c] = S_ID;
             table[S_ID][c] = S_ID;
@@ -362,11 +376,14 @@ static void init_num_dfa() {
     table[S_NUM]['.'] = S_DOT_FLOAT;
     table[S_START]['.'] = S_DOT_FLOAT;
 
-    for (char c = 0; c < 127; c++) {
+    for (unsigned char c = 0; c < 128; c++) {
         if (isdigit(c)) {
             table[S_START][c] = S_NUM;
+            table[S_NUM][c] = S_NUM;
             table[S_DOT_FLOAT][c] = S_FLOAT;
             table[S_FLOAT][c] = S_FLOAT;
+            table[S_PLUS][c] = S_NUM;
+            table[S_MINUS][c] = S_NUM;
         }
 
         else if (c == '{' || c == '}' || isspace(c) ||

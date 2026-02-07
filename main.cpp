@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     }
 
     char* ptr_buff = buff;
-    uint32_t count = 0;
+    uint64_t count = 0;
     Token* tokens = lexer(&ptr_buff, &count);
     if (!tokens) {
         fprintf(stderr, RED "Error of lexical analyzer!\n" RESET);
@@ -49,19 +49,17 @@ int main(int argc, char* argv[]) {
         goto syntax_error;
     }
 
-    succesfull_execution:
-        free(tokens);
-        free(buff);
-        burn_the_tree(program_tree->root);
-        free(program_tree);
-        return 0;
+
+    destroy_tokens(tokens, count);
+    free(buff);
+    burn_the_tree(program_tree->root);
+    free(program_tree);
+    return 0;
 
     syntax_error:
         print_error(ptr);
-        free(tokens);
+        destroy_tokens(tokens, count);
         free(buff);
         free(program_tree);
         return 1;
-
-    return 0;
 }

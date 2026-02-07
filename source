@@ -3,3 +3,7 @@ while {x > 1} ;
     x = x + 6) //kjdfgasdkl
     x = x - 3)
 ;
+
+for {x < -1} ;
+    x = x - 10)
+;
