@@ -99,8 +99,8 @@ static void node_dump(Node* node, FILE* dot_file) {
         case LBRACE:
         case RBRACE:
         case COMMA:
-        case SEMICOLON:
         case DOT:
+        case SEMICOLON:
         case IF:
         case ELSE_IF:
         case ELSE:

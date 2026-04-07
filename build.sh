@@ -1,4 +1,4 @@
-CFLAGS="-I. -Itree_differ -Ihash_table -Ilist_for_operators -D_DEBUG \
+CFLAGS="-Ilexer -Iparser -Itree -Ierror_handling -Iread_file -I. -Itree_differ -Ihash_table -Ilist_for_operators -D_DEBUG \
 -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations \
 -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar\
 -subscripts -Wconditionally-supported -Wconversion -Wctor-dtor-privacy \
@@ -16,7 +16,7 @@ CFLAGS="-I. -Itree_differ -Ihash_table -Ilist_for_operators -D_DEBUG \
 -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,\
 float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,\
 object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,\
-undefined,unreachable,vla-bound,vptr"
+undefined,unreachable,vla-bound,vptr -lasan"
 
 SOURCES="main.cpp lexer/lexer.cpp read_file/read_file.cpp parser/parser.cpp\
          tree/tree.cpp tree/tree_dump.cpp error_handling/verify.cpp"

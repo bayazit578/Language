@@ -13,7 +13,7 @@ static void init_num_dfa();
 
 State table[S_ERROR][128];
 
-void destroy_tokens(Token* tokens, uint64_t count) {
+void destroy_tokens(Token* tokens, uint32_t count) {
     for (uint64_t i = 0; i < count; i++) {
         if (tokens[i].type != INT && tokens[i].type != FLOAT) {
             free(tokens[i].value.str);
@@ -120,10 +120,6 @@ Token* lexer(char** ptr, uint32_t* count) {
                     CURRENT_TYPE = OR;
                     break;
 
-                case S_SEMIC:
-                    CURRENT_TYPE = SEMICOLON;
-                    break;
-
                 case S_COMMA:
                     CURRENT_TYPE = COMMA;
                     break;
@@ -138,6 +134,10 @@ Token* lexer(char** ptr, uint32_t* count) {
 
                 case S_LBRACE:
                     CURRENT_TYPE = LBRACE;
+                    break;
+
+                case S_SEMIC:
+                    CURRENT_TYPE = SEMICOLON;
                     break;
 
                 case S_RBRACE:
@@ -194,7 +194,6 @@ Token* lexer(char** ptr, uint32_t* count) {
 
                 case S_LT_EQ:
                     CURRENT_TYPE = LESS_EQ;
-                    break;
 
                 default:
                     continue;

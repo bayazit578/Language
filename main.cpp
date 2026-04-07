@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     }
 
     char* ptr_buff = buff;
-    uint64_t count = 0;
+    uint32_t count = 0;
     Token* tokens = lexer(&ptr_buff, &count);
     if (!tokens) {
         fprintf(stderr, RED "Error of lexical analyzer!\n" RESET);
