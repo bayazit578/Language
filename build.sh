@@ -1,4 +1,6 @@
-CFLAGS="-Ilexer -Iparser -Itree -Ierror_handling -Iread_file -I. -Itree_differ -Ihash_table -Ilist_for_operators -D_DEBUG \
+#!/bin/bash
+
+CFLAGS="-Iinclude -D_DEBUG \
 -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations \
 -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar\
 -subscripts -Wconditionally-supported -Wconversion -Wctor-dtor-privacy \
@@ -18,8 +20,8 @@ float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,\
 object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,\
 undefined,unreachable,vla-bound,vptr -lasan"
 
-SOURCES="main.cpp lexer/lexer.cpp read_file/read_file.cpp parser/parser.cpp\
-         tree/tree.cpp tree/tree_dump.cpp error_handling/verify.cpp"
+SOURCES="src/main.cpp src/lexer.cpp src/read_file.cpp src/parser.cpp src/symbol.cpp \
+         src/tree.cpp src/tree_dump.cpp src/verify.cpp src/list.cpp"
 
 OUTPUT="program"
 

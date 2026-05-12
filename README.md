@@ -1,43 +1,49 @@
 SYNTAX OF MY LANGUAGE:
 
-G := CompoundST EOF
+G               := Func_def* EOF
 
-CompoundST := ST*
+Func_def        := I '{' Param '}' ';' CompoundST ';'
 
-ST := SimpleST ')' | StructuredST
+Param           := [I ['.' I]* ]?
 
-SimpleST := A | BREAK | CONTINUE
+CompoundST      := ST*
 
-StructuredST := W | IF | FOR | DO
+ST              := SimpleST ')' | StructuredST | Func_call
 
-W := if '{' E '}' ';' CompoundST ';'
+SimpleST        := A | BREAK | CONTINUE
 
-IF := while '{' E '}' ';' CompoundST ';' ELSE_IF
+StructuredST    := W | IF | FOR | DO
 
-ELSE_IF := { for '{' E '}' ';' CompoundST ';' }* ELSE?
+Func_call       := I '{' Param '}' ')'
 
-ELSE := do ';' CompoundST ';'
+W               := if '{' E '}' ';' CompoundST ';'::
 
-FOR := else if '{' FOR_COND '}' ';' CompoundST ';'
+IF              := while '{' E '}' ';' CompoundST ';' ELSE_IF
 
-FOR_COND := A? ')' E? ')' A?
+ELSE_IF         := { for '{' E '}' ';' CompoundST ';' }* ELSE?
 
-DO := else ';' CompoundST ';' if '{' E '}' ')'
+ELSE            := do ';' CompoundST ';'
 
-A := I '=' E
+FOR             := else if '{' FOR_COND '}' ';' CompoundST ';'
 
-BREAK := break
+FOR_COND        := A? ')' E? ')' A?
 
-CONTINUE := continue
+DO              := else ';' CompoundST ';' if '{' E '}' ')'
 
-E := AND { '||' AND }*
+A               := I '=' E
 
-AND := COMP { '&&' COMP }*
+BREAK           := break
 
-COMP := ARITH { ['>' '<' '>=' '<=' '==' '!='] ARITH }*
+CONTINUE        := continue
 
-ARITH := T { ['+' '-'] T }*
+E               := AND { '||' AND }*
 
-T := F { ['*' '/' '%'] F }*
+AND             := COMP { '&&' COMP }*
 
-F := I | N | '{' E '}'
+COMP            := ARITH { ['>' '<' '>=' '<=' '==' '!='] ARITH }*
+
+ARITH           := T { ['+' '-'] T }*
+
+T               := F { ['*' '/' '%'] F }*
+
+F               := I | N | '{' E '}'

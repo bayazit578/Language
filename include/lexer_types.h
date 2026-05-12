@@ -1,9 +1,10 @@
 #pragma once
 
+#include <stdint.h>
+
 enum State {
     S_ID        , // идент
     S_NUM       , // число
-    S_DOT_FLOAT , // точка во флоат числе
     S_FLOAT     , // флоат число
     S_PLUS      , // +
     S_MINUS     , // -
@@ -29,6 +30,7 @@ enum State {
     S_PIPE      , // |
     S_COMMENT   , // коммент //
     S_COMMENT_ML, // коммент /*
+    S_DOT_FLOAT , // точка во флоат числе
 
     S_START     , // начальное состояние
 
@@ -56,11 +58,15 @@ enum State {
     S_ELSE_I    ,
     S_ELSE_IF   ,
 
+    S_M         ,
+    S_MA        ,
+    S_MAI       ,
+    S_MAIN      ,
+
     S_ERROR     ,
 };
 
 enum TokenType {
-    KEYWORD     ,
     IDENT       ,
     INT         ,
     FLOAT       ,
@@ -84,13 +90,17 @@ enum TokenType {
     COMMA       ,
     SEMICOLON   ,
     DOT         ,
-    IF          ,
-    ELSE_IF     ,
-    ELSE        ,
-    WHILE       ,
-    FOR         ,
-    DO          ,
+    WHILE   = 33,
+    FOR     = 36,
+    DO      = 38,
+    IF      = 40,
+    ELSE    = 44,
+    ELSE_IF = 47,
+    MAIN    = 51,
+    FUNC_DEF    ,
+    FUNC_CALL   ,
     END_OF_FILE ,
+    KEYWORD     ,
     ERROR       ,
 };
 
@@ -98,15 +108,15 @@ typedef union {
     char*  str;
     double dubl;
     int    intg;
-} Value;
+} value_t;
 
 typedef struct {
     uint32_t line;
     uint32_t column;
-} Loc;
+} location_t;
 
 typedef struct {
-    TokenType type;
-    Value     value;
-    Loc       location;
-} Token;
+    TokenType  type;
+    value_t    value;
+    location_t location;
+} token_t;
