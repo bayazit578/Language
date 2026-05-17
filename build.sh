@@ -20,8 +20,9 @@ float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,\
 object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,\
 undefined,unreachable,vla-bound,vptr -lasan"
 
-SOURCES="src/main.cpp src/lexer.cpp src/read_file.cpp src/parser.cpp src/symbol.cpp \
-         src/tree.cpp src/tree_dump.cpp src/verify.cpp src/list.cpp"
+SOURCES="src/main.cpp src/lexer.cpp src/read_file.cpp src/parser.cpp \
+         src/tree.cpp src/tree_dump.cpp src/verify.cpp src/list.cpp \
+         src/hash_table.cpp"
 
 OUTPUT="program"
 

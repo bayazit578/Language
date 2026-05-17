@@ -1,5 +1,7 @@
 #include "list.h"
 
+#include "parser_types.h"
+
 static void* const POISON = (void*)(uintptr_t)0xDEFACED;
 
 static const int MAX_CMD_LEN = 500;
@@ -11,12 +13,12 @@ list_t* list_create() {
         return NULL;
     }
 
-    cnucok->contents = (node_t*)calloc(1, sizeof(node_t));
+    cnucok->contents = (list_node_t*)calloc(1, sizeof(list_node_t));
     cnucok->free = -1;
     cnucok->size = 1;
     cnucok->capacity = 1;
 
-    node_t* node = cnucok->contents;
+    list_node_t* node = cnucok->contents;
     node[0].value = 0;
     node[0].next = 0;
     node[0].prev = 0;
@@ -28,7 +30,7 @@ list_t* list_create() {
 
 void list_destroy(list_t* cnucok) {
     for (uint32_t i = 0; i < cnucok->capacity; i++) {
-        if (!cnucok->contents[i].value) {
+        if (cnucok->contents[i].value && cnucok->contents[i].value != POISON) {
             free(cnucok->contents[i].value);
         }
     }
@@ -46,8 +48,8 @@ void list_insert_after(list_t* cnucok, uint32_t ind, void* value) {
 
     if (cnucok->size >= cnucok->capacity) {
         cnucok->capacity *= 2;
-        cnucok->contents = (node_t*)realloc(cnucok->contents,
-                                            cnucok->capacity * sizeof(node_t));
+        cnucok->contents = (list_node_t*)realloc(cnucok->contents,
+                                cnucok->capacity * sizeof(list_node_t));
         for (uint32_t i = cnucok->size; i < cnucok->capacity; i++) {
             cnucok->contents[i].value = POISON;
             cnucok->contents[i].next = i + 1;
@@ -75,7 +77,7 @@ void list_insert_after(list_t* cnucok, uint32_t ind, void* value) {
 
     if (cnucok->capacity != cnucok->size) {
         uint32_t last_ind = cnucok->capacity - 1;
-        cnucok->contents[last_ind].next = cnucok->free;
+        cnucok->contents[last_ind].next = (uint32_t)cnucok->free;
     }
 }
 
@@ -89,15 +91,15 @@ void* list_erase(list_t* cnucok, uint32_t ind) {
     cnucok->contents[ind_prev].next = ind_next;
     cnucok->contents[ind_next].prev = ind_prev;
 
-    uint32_t first_empty_ind = cnucok->free;
+    uint32_t first_empty_ind = (uint32_t)cnucok->free;
     uint32_t last_empty_ind = cnucok->contents[first_empty_ind].prev;
-    cnucok->contents[ind].next = cnucok->free;
+    cnucok->contents[ind].next = (uint32_t)cnucok->free;
     cnucok->contents[ind].prev = last_empty_ind;
 
     cnucok->contents[first_empty_ind].prev = ind;
     cnucok->contents[last_empty_ind].next = ind;
 
-    cnucok->free = ind;
+    cnucok->free = (int)ind;
 
     get_free(cnucok);
     return value;
@@ -128,7 +130,7 @@ void get_free(list_t* cnucok) {
     if (size == capacity)
         cnucok->free = -1;
     else
-        cnucok->free = size;
+        cnucok->free = (int)size;
 }
 
 #define CLR_RED_LIGHT_   "\"#FFB0B0\""
@@ -182,7 +184,7 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
     );
 
     fprintf(dot_file,
-        "node_%u[shape=record,"
+        "node_%d[shape=record,"
         "label=\"ind: 0 | data: NULL | { prev: %u | next: %u } \","
         "color=" CLR_BLUE_BOLD_ ","
         "style=\"filled,bold,rounded\","
@@ -192,12 +194,12 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
     );
 
     elem_t* value = NULL; 
-    int node_ind = cnucok->contents[0].next;
+    int node_ind = (int)cnucok->contents[0].next;
     while (node_ind != 0) {
         value = (elem_t*)cnucok->contents[node_ind].value;
         fprintf(dot_file,
-            "node_%u[shape=record,"
-            "label=\" ind: %u | data: %s | { prev: %u | next: %u } \","
+            "node_%d[shape=record,"
+            "label=\" ind: %d | data: %s | { prev: %u | next: %u } \","
             "style=\"filled,rounded\","
             "color=" CLR_GREEN_BOLD_ ","
             "fillcolor=" CLR_GREEN_LIGHT_","
@@ -208,7 +210,7 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
             cnucok->contents[node_ind].prev,
             cnucok->contents[node_ind].next
         );
-        node_ind = cnucok->contents[node_ind].next; 
+        node_ind = (int)cnucok->contents[node_ind].next; 
     }
 
     // free
@@ -216,8 +218,8 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
         node_ind = cnucok->free;
         do {
             fprintf(dot_file,
-                "node_%u[shape=record,"
-                "label=\" ind: %u | data: POISON | { prev: %u | next: %u } \","
+                "node_%d[shape=record,"
+                "label=\" ind: %d | data: POISON | { prev: %u | next: %u } \","
                 "style=\"filled,rounded\","
                 "color=" CLR_RED_BOLD_ ","
                 "fillcolor=" CLR_RED_LIGHT_","
@@ -227,7 +229,7 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
                 cnucok->contents[node_ind].prev,
                 cnucok->contents[node_ind].next
             );
-            node_ind = cnucok->contents[node_ind].next;
+            node_ind = (int)cnucok->contents[node_ind].next;
         } while ((int)node_ind != cnucok->free);
     }
 
@@ -236,11 +238,11 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
 
     do {
         fprintf(dot_file,
-            "node_%u -> node_%u [weight=1000, style=solid];\n",
+            "node_%d -> node_%u [weight=1000, style=solid];\n",
             node_ind,
             cnucok->contents[node_ind].next
         );
-        node_ind = cnucok->contents[node_ind].next;
+        node_ind = (int)cnucok->contents[node_ind].next;
     } while (node_ind != 0);
 
     fprintf(dot_file,
@@ -248,7 +250,7 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
         "shape=record,"
         "style=\"filled,rounded\","
         "fillcolor=" CLR_GREEN_LIGHT_ "];\n"
-        "node_head -> node_%d [weight=100, style=solid];\n", 
+        "node_head -> node_%u [weight=100, style=solid];\n", 
         cnucok->contents[0].next
     );
 
@@ -258,11 +260,11 @@ void list_dump(list_t* cnucok, const char* filename, uint32_t cell_number,
     if (node_ind != -1) {
         do {
             fprintf(dot_file,
-                "node_%u -> node_%u [weight=1000, style=solid];\n",
+                "node_%d -> node_%u [weight=1000, style=solid];\n",
                 node_ind,
                 cnucok->contents[node_ind].next
             );
-            node_ind = cnucok->contents[node_ind].next;
+            node_ind = (int)cnucok->contents[node_ind].next;
         } while ((int)node_ind != cnucok->free);
 
         fprintf(dot_file,

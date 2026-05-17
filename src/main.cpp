@@ -1,12 +1,12 @@
 #include "include.h"
-
-#include "lexer/lexer.h"
-#include "lexer/lexer_types.h"
-#include "read_file/read_file.h"
-#include "tree/tree_types.h"
-#include "tree/tree.h"
-#include "error_handling/verify.h"
-#include "parser/parser.h"
+#include "lexer.h"
+#include "lexer_types.h"
+#include "list.h"
+#include "read_file.h"
+#include "tree_types.h"
+#include "tree.h"
+#include "verify.h"
+#include "parser.h"
 
 int main(int argc, char* argv[]) {
     if(argc < 2) {
@@ -32,8 +32,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    char* ptr_buff = buff;
-    uint32_t count = 0;
+    char* ptr_buff  = buff;
+    uint32_t count  = 0;
     token_t* tokens = lexer(&ptr_buff, &count);
     if (!tokens) {
         fprintf(stderr, RED "Error of lexical analyzer!\n" RESET);
@@ -44,21 +44,26 @@ int main(int argc, char* argv[]) {
 
     bool synt_error = false;
     uint32_t ptr = 0;
-    tree_t* program_tree = parse_program(tokens, &ptr, &synt_error, count);
+    list_t *func_table   = list_create();
+    list_t *symbol_table = list_create();
+    tree_t* program_tree = parse_program(tokens, &ptr, &synt_error, 
+                                         func_table, symbol_table);
     if (synt_error) {
         goto syntax_error;
     }
 
+    dump_func_table(func_table);
+    list_destroy(func_table);
     destroy_tokens(tokens, count);
     free(buff);
     burn_the_tree(program_tree->root);
     free(program_tree);
-    return 0;
+    return EXIT_SUCCESS;
 
     syntax_error:
         print_error(ptr);
         destroy_tokens(tokens, count);
         free(buff);
         free(program_tree);
-        return 1;
+        return EXIT_FAILURE;
 }

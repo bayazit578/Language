@@ -26,7 +26,8 @@ void destroy_tokens(token_t* tokens, uint32_t count) {
 }
 
 void dump_tokens(token_t* tokens, uint32_t count) {
-    printf(YELLO "=====================================================================\n" RESET);
+    printf(YELLO "==================================="
+                 "==================================\n" RESET);
     for (uint32_t i = 0; i < count; i++) {
         if (tokens[i].type == INT) {
             printf(YELLO "[%u]:%d\n" RESET, i, tokens[i].value.intg);
@@ -40,7 +41,8 @@ void dump_tokens(token_t* tokens, uint32_t count) {
             printf(YELLO "[%u]:%s\n" RESET, i, tokens[i].value.str);
         }
     }
-    printf(YELLO "=====================================================================\n" RESET);
+    printf(YELLO "==================================="
+                 "==================================\n" RESET);
 }
 
 token_t* lexer(char** ptr, uint32_t* count) {
@@ -83,7 +85,7 @@ token_t* lexer(char** ptr, uint32_t* count) {
         }
 
         if (next_state == S_START && state != S_START) {
-            uint64_t len = current - token_start;
+            uint64_t len = (uint64_t)(current - token_start);
             CURRENT_TYPE = (TokenType)state; 
 
             if (CURRENT_TYPE == INT) {
@@ -157,7 +159,7 @@ static void init_dfa() {
     table[S_START]['{'] = S_LBRACE;
     table[S_START]['}'] = S_RBRACE;
 
-    for (unsigned char i = S_PLUS; i < S_W; i++) {
+    for (unsigned char i = S_PLUS; i < S_DOT_FLOAT; i++) {
         for (unsigned char c = 0; c < 128; c++) {
             table[i][c] = S_START;
         }
@@ -184,7 +186,6 @@ static void init_keyword_dfa() {
     table[S_START]['d'] = S_D;
     table[S_START]['i'] = S_I;
     table[S_START]['e'] = S_E;
-    table[S_START]['m'] = S_M;
 
     table[S_ELSE      ][' '] = S_ELSE_SPACE;
     table[S_ELSE_SPACE]['i'] = S_ELSE_I    ;
@@ -212,11 +213,6 @@ static void init_keyword_dfa() {
             table[S_EL   ][c] = (c == 's') ? S_ELS   : S_ID;
             table[S_ELS  ][c] = (c == 'e') ? S_ELSE  : S_ID;
             table[S_ELSE ][c] =              S_ID          ;
-
-            table[S_M    ][c] = (c == 'h') ? S_MA    : S_ID;
-            table[S_MA   ][c] = (c == 'i') ? S_MAI   : S_ID;
-            table[S_MAI  ][c] = (c == 'l') ? S_MAIN  : S_ID;
-            table[S_MAIN ][c] =              S_ID          ;
         }
 
         else if (isspace(c)) {
@@ -225,7 +221,6 @@ static void init_keyword_dfa() {
             table[S_DO     ][c] = S_START;
             table[S_IF     ][c] = S_START;
             table[S_ELSE_IF][c] = S_START;
-            table[S_MAIN   ][c] = S_START;
 
             if (c != ' ') {
                 table[S_ELSE][c] = S_START;
@@ -238,7 +233,6 @@ static void init_keyword_dfa() {
             table[S_ELSE      ][c] = S_START;
             table[S_ELSE_SPACE][c] = S_START;
             table[S_ELSE_IF   ][c] = S_START;
-            table[S_MAIN      ][c] = S_START;
         }
     }
 }
