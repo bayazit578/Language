@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CFLAGS="-Iinclude -D_DEBUG \
+CFLAGS="-Ifrontend/include -D_NDEBUG -Icommon/include \
 -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations \
 -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar\
 -subscripts -Wconditionally-supported -Wconversion -Wctor-dtor-privacy \
@@ -20,22 +20,25 @@ float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,\
 object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,\
 undefined,unreachable,vla-bound,vptr -lasan"
 
-SOURCES="src/main.cpp src/lexer.cpp src/read_file.cpp src/parser.cpp \
-         src/tree.cpp src/tree_dump.cpp src/verify.cpp src/list.cpp \
-         src/hash_table.cpp"
+SOURCES="frontend/src/main.cpp frontend/src/lexer.cpp frontend/src/parser.cpp \
+         frontend/src/verify.cpp common/src/read_file.cpp common/src/tree.cpp \
+         common/src/tree_dump.cpp common/src/list.cpp common/src/hash_table.cpp"
 
 OUTPUT="program"
-
+OUTPUT_DIR="compiled"
 INPUT="source"
 
 echo "Compilation..."
-g++ $CFLAGS $SOURCES -o $OUTPUT
+
+mkdir -p $OUTPUT_DIR
+
+g++ $CFLAGS $SOURCES -o $OUTPUT_DIR/$OUTPUT
 
 if [ $? -eq 0 ]; then
     echo "Compilation executed successfully!"
     echo "Running program: ./$OUTPUT"
     echo "====================================================================="
-    ./$OUTPUT $INPUT
+    ./$OUTPUT_DIR/$OUTPUT $INPUT
     echo "====================================================================="
     echo "Program executed."
     read -p "Press Enter to exit..."

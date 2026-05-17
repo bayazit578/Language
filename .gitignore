@@ -1,3 +1,7 @@
-program
+dot_files/
+.git/
+.cache/
+compile_commands.json
+.gdb_history
 source
 syntax
